@@ -5,7 +5,7 @@ const fs = require("fs");
 const path = require("path");
 const tfnode = require("@tensorflow/tfjs-node");
 
-function loadDataset(baseDir="./data/seg_train/seg_train") {
+function loadDataset(baseDir = "./data/seg_train/seg_train") {
     const folders = fs.readdirSync(baseDir);
     const allFiles = [];
     for (const i in folders) {
@@ -23,8 +23,8 @@ function loadDataset(baseDir="./data/seg_train/seg_train") {
     let labels = [];
     for (const [file, i] of allFiles) {
         let buffer = fs.readFileSync(file);
-        let tfimage = tfnode.node.decodeImage(buffer, chanels=3);
-        tfimage = tf.image.resizeBilinear(tfimage, [28, 28]),
+        let tfimage = tfnode.node.decodeImage(buffer, chanels = 3);
+        tfimage = tf.image.resizeBilinear(tfimage, [28, 28]);
         tfimage = tfimage.cast("float32").div(255);
         images.push(tfimage);
         labels.push(i);
@@ -43,39 +43,75 @@ function onEpochEnd(data, logs) {
 async function main() {
     const [xs, ys] = loadDataset();
 
-    const model = tf.sequential();
-    model.add(tf.layers.conv2d({
+    const model = tfnode.sequential();
+    model.add(tfnode.layers.conv2d({
         inputShape: [28, 28, 3],
         filters: 32,
         kernelSize: 3,
         activation: "relu"
     }));
-    model.add(tf.layers.dense({
-        inputShape: [1],
-        units: 1,
-        activation: "relu",
-        kernelInitializer: "ones"
-    }));
-    model.add(tf.layers.maxPool2d({
+    model.add(tfnode.layers.maxPool2d({
+        inputShape: [28, 28, 3],
         poolSize: [2, 2],
         strides: [1, 1]
     }));
-    model.add(tf.layers.flatten());
-    model.add(tf.layers.dense({
+
+    model.add(tfnode.layers.conv2d({
+        inputShape: [14, 14, 6],
+        filters: 32,
+        kernelSize: 3,
+        activation: "relu"
+    }));
+    model.add(tfnode.layers.maxPool2d({
+        inputShape: [14, 14, 6],
+        poolSize: [2, 2],
+        strides: [1, 1]
+    }));
+
+    model.add(tfnode.layers.conv2d({
+        inputShape: [10, 10, 16],
+        filters: 32,
+        kernelSize: 3,
+        activation: "relu"
+    }));
+    model.add(tfnode.layers.maxPool2d({
+        inputShape: [10, 10, 16],
+        poolSize: [2, 2],
+        strides: [1, 1]
+    }));
+    model.add(tfnode.layers.conv2d({
+        inputShape: [5, 5, 16],
+        filters: 32,
+        kernelSize: 3,
+        activation: "relu"
+    }));
+    model.add(tfnode.layers.maxPool2d({
+        inputShape: [5, 5, 16],
+        poolSize: [2, 2],
+        strides: [1, 1]
+    }));
+
+    model.add(tfnode.layers.flatten());
+
+    model.add(tfnode.layers.dense({
+        units: 512,
+        activation: "relu"
+    }));
+    model.add(tfnode.layers.dense({
         units: 6,
         activation: "softmax"
     }));
     model.compile({
-        optimizer: tf.train.sgd(0.001),
+        optimizer: tfnode.train.sgd(0.01),
         loss: 'categoricalCrossentropy',
         metrics: ["accuracy"]
     });
 
     const h = await model.fit(xs, ys, {
-       epochs: 100,
-       batchSize: 150
+        epochs: 100,
+        batchSize: 50
     });
-    await model.save("file:///cnn-model");
+    await model.save("file://./cnn-model");
 }
 
 main();

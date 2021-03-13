@@ -8,8 +8,8 @@ function onEpochEnd(data, logs) {
 
 async function main() {
     const N = 10000;
-    const data   = Array.from(new Array(N).keys());
-    const answer = data.map(x => x*2);
+    const data = Array.from(new Array(N).keys());
+    const answer = data.map(x => x * 2);
 
     const xs = tf.tensor2d(data, [N, 1]);
     const ys = tf.tensor2d(answer, [N, 1]);
@@ -27,10 +27,10 @@ async function main() {
     });
 
     const h = await model.fit(xs, ys, {
-       epochs: 100,
-       batchSize: 100,
+        epochs: 100,
+        batchSize: 100,
         callbacks: {
-           onEpochEnd
+            onEpochEnd
         }
     });
 
